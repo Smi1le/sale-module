@@ -1,6 +1,7 @@
 package sale.utils;
 
 import sale.enums.ProductType;
+import sale.model.Backet;
 import sale.model.Product;
 import sale.model.Discount;
 
@@ -27,7 +28,19 @@ public class DiscountCalculateUtils {
         return productList.stream().collect(Collectors.summarizingLong(Product::getPrice)).getSum();
     }
 
+    public static double calculateTotalPrice(Backet backet) {
+        double priceWithoutDiscount = backet.getPriceWithoutDiscount();
+        double discount = backet.getDiscount();
+        List<Product> products = backet.getProducts();
+        double additionalDiscount =  DiscountCalculateUtils
+                .calculateDiscountByProductCount(priceWithoutDiscount - discount, products);
+        discount += additionalDiscount;
+        backet.setDiscount(discount);
+        return priceWithoutDiscount - discount;
+    }
+
     public static double calculateDiscount(List<Product> productList) {
+        markIsNotInDiscount(productList);
         double totalDiscount = 0;
 
         for (Product product: productList) {
@@ -83,6 +96,12 @@ public class DiscountCalculateUtils {
             }
         }
         return coptProductTypes.isEmpty();
+    }
+
+    private static void markIsNotInDiscount(List<Product> products) {
+        for (Product product : products) {
+            product.setAllreadyInDiscount(false);
+        }
     }
 
     private static double calculateDiscountForProducts(Discount sale) {

@@ -2,10 +2,11 @@ package sale.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import sale.utils.DiscountCalculateUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Data
 @NoArgsConstructor
@@ -15,33 +16,28 @@ public class Backet {
 
     private List<Product> products;
 
+    private List<TotalDiscount> totalDiscounts;
+
     private double priceWithoutDiscount;
 
     private double discount;
 
     private double totalPrice;
 
+    private Function<Backet, Backet> refreshCalcCallback;
+
     public Backet(List<Product> products) {
         this.id = UUID.randomUUID();
         this.products = products;
-        this.priceWithoutDiscount = calculatePriceWithoutDiscount();
-        this.discount = calculateDiscount();
-        this.totalPrice = caltulateTotalPrice();
-
+        this.totalDiscounts = new ArrayList<>();
     }
 
-    private long calculatePriceWithoutDiscount() {
-        return DiscountCalculateUtils.calculatePriceWithoutDiscount(this.products);
+    public void addTotalDiscount(TotalDiscount totalDiscount) {
+        this.totalDiscounts.add(totalDiscount);
+        Backet newVersion = refreshCalcCallback.apply(this);
+        this.totalPrice = newVersion.totalPrice;
+        this.priceWithoutDiscount = newVersion.priceWithoutDiscount;
+        this.discount = newVersion.discount;
     }
 
-    private double calculateDiscount() {
-        return DiscountCalculateUtils.calculateDiscount(this.products);
-    }
-
-    private double caltulateTotalPrice() {
-        double additionalDiscount =  DiscountCalculateUtils
-                .calculateDiscountByProductCount(priceWithoutDiscount - discount, products);
-        discount += additionalDiscount;
-        return priceWithoutDiscount - discount;
-    }
 }

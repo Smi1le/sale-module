@@ -20,7 +20,7 @@ public class ProductBuilder {
     }
 
     public ProductBuilder addSale(Collection<Discount> discounts) {
-        discounts.forEach(discount -> product.addSale(discount));
+        discounts.forEach(discount -> addSale(discount));
         return this;
     }
 

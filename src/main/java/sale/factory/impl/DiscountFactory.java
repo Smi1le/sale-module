@@ -2,7 +2,6 @@ package sale.factory.impl;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.inject.Inject;
 import sale.enums.ProductType;
 import sale.factory.IDiscountFactory;
 import sale.model.Discount;
@@ -13,7 +12,6 @@ public class DiscountFactory implements IDiscountFactory {
 
     private Multimap<ProductType, Discount> discountsMap;
 
-    @Inject
     public DiscountFactory() {
         discountsMap = ArrayListMultimap.create();
         addDiscountsForAAndBProductType();

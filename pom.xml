@@ -29,19 +29,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>3.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>21.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -50,10 +40,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.lamberto.junit</groupId>
-            <artifactId>guice-junit-runner</artifactId>
-            <version>1.0.2</version>
-            <scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.5</version>
         </dependency>
     </dependencies>
 </project>

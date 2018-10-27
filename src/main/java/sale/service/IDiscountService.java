@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface IDiscountService {
 
+    Backet calculateCast(ProductType... types);
+
     Backet createBacket(List<ProductType>productTypes);
 
     Backet getBacketById(UUID id);
