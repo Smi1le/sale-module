@@ -12,14 +12,26 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Product {
 
+    /**
+     * ID
+     */
     private UUID id;
 
+    /**
+     * Product type
+     */
     private ProductType type;
 
     private long price;
 
+    /**
+     * All available discount for ProductType
+     */
     private List<Discount> discounts;
 
+    /**
+     * Flag is product allready calculate in discount
+     */
     private Boolean allreadyInDiscount = false;
 
     public Product(ProductType type, long price) {

@@ -8,6 +8,9 @@ import sale.model.Discount;
 
 import java.util.Collection;
 
+/**
+ * Factory to build of discounts for certain product types
+ */
 public class DiscountFactory implements IDiscountFactory {
 
     private Multimap<ProductType, Discount> discountsMap;
@@ -20,6 +23,11 @@ public class DiscountFactory implements IDiscountFactory {
         addDiscountsForKLOrMProductType();
     }
 
+    /**
+     * Return list discounts for certain product type
+     * @param type - ProductType
+     * @return Collection<Discount>
+     */
     @Override
     public Collection<Discount> get(ProductType type) {
         return discountsMap.get(type);

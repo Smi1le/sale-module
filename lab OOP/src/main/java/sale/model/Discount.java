@@ -11,10 +11,19 @@ import java.util.List;
 @NoArgsConstructor
 public class Discount {
 
+    /**
+     * List product types
+     */
     private List<ProductType> productTypes;
 
+    /**
+     * Discount priority
+     */
     private long priority;
 
+    /**
+     * Discount amount
+     */
     private long discountPercent;
 
     public Discount(long priority, long discountPercent, ProductType... types) {

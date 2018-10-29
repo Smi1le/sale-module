@@ -2,6 +2,9 @@ package sale.enums;
 
 import lombok.Getter;
 
+/**
+ * Enum Product Types
+ */
 public enum ProductType {
     A("A", 300),
     B("B", 450),

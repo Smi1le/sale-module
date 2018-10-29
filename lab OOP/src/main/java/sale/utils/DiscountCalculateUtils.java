@@ -1,7 +1,7 @@
 package sale.utils;
 
 import sale.enums.ProductType;
-import sale.model.Backet;
+import sale.model.Basket;
 import sale.model.Product;
 import sale.model.Discount;
 
@@ -10,7 +10,14 @@ import java.util.stream.Collectors;
 
 public class DiscountCalculateUtils {
 
+    /**
+     * Additional discounts depending on the quantity of products to the basket
+     */
     private static Map<Long, Long> mapDiscountByProductCount;
+
+    /**
+     * List product types not participate in quantity discounts
+     */
     private static List<ProductType> listProductTypesNotParticipateInQuantityDiscount;
 
     static {
@@ -28,14 +35,14 @@ public class DiscountCalculateUtils {
         return productList.stream().collect(Collectors.summarizingLong(Product::getPrice)).getSum();
     }
 
-    public static double calculateTotalPrice(Backet backet) {
-        double priceWithoutDiscount = backet.getPriceWithoutDiscount();
-        double discount = backet.getDiscount();
-        List<Product> products = backet.getProducts();
+    public static double calculateTotalPrice(Basket basket) {
+        double priceWithoutDiscount = basket.getPriceWithoutDiscount();
+        double discount = basket.getDiscount();
+        List<Product> products = basket.getProducts();
         double additionalDiscount =  DiscountCalculateUtils
                 .calculateDiscountByProductCount(priceWithoutDiscount - discount, products);
         discount += additionalDiscount;
-        backet.setDiscount(discount);
+        basket.setDiscount(discount);
         return priceWithoutDiscount - discount;
     }
 
@@ -80,22 +87,20 @@ public class DiscountCalculateUtils {
     }
 
     private static boolean containsAll(List<Product> products, List<ProductType> productTypes) {
-        List<ProductType> coptProductTypes = new ArrayList<>(productTypes);
-        int count = 0;
+        List<ProductType> copyProductTypes = new ArrayList<>(productTypes);
         for (Product product: products) {
-            if (coptProductTypes .isEmpty()) {
+            if (copyProductTypes .isEmpty()) {
                 return true;
             }
             if (product.getAllreadyInDiscount()) {
                 continue;
             }
-            if (coptProductTypes .contains(product.getType())) {
+            if (copyProductTypes .contains(product.getType())) {
                 product.setAllreadyInDiscount(true);
-                coptProductTypes.remove(product.getType());
-                ++count;
+                copyProductTypes.remove(product.getType());
             }
         }
-        return coptProductTypes.isEmpty();
+        return copyProductTypes.isEmpty();
     }
 
     private static void markIsNotInDiscount(List<Product> products) {

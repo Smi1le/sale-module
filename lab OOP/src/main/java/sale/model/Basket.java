@@ -10,23 +10,42 @@ import java.util.function.Function;
 
 @Data
 @NoArgsConstructor
-public class Backet {
+public class Basket {
 
+    /**
+     * ID
+     */
     private UUID id;
 
+    /**
+     * List product in backet
+     */
     private List<Product> products;
 
+    /**
+     * List additional discount
+     */
     private List<TotalDiscount> totalDiscounts;
 
+    /**
+     * Price without discounts
+     */
     private double priceWithoutDiscount;
 
+    /**
+     * Discount
+     */
     private double discount;
 
+    /**
+     * Total price for list product, including all discounts
+     */
     private double totalPrice;
 
-    private Function<Backet, Backet> refreshCalcCallback;
 
-    public Backet(List<Product> products) {
+    private Function<Basket, Basket> refreshCalcCallback;
+
+    public Basket(List<Product> products) {
         this.id = UUID.randomUUID();
         this.products = products;
         this.totalDiscounts = new ArrayList<>();
@@ -34,7 +53,7 @@ public class Backet {
 
     public void addTotalDiscount(TotalDiscount totalDiscount) {
         this.totalDiscounts.add(totalDiscount);
-        Backet newVersion = refreshCalcCallback.apply(this);
+        Basket newVersion = refreshCalcCallback.apply(this);
         this.totalPrice = newVersion.totalPrice;
         this.priceWithoutDiscount = newVersion.priceWithoutDiscount;
         this.discount = newVersion.discount;

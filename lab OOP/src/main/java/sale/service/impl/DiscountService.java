@@ -6,7 +6,7 @@ import sale.builder.ProductBuilder;
 import sale.enums.ProductType;
 import sale.factory.IDiscountFactory;
 import sale.factory.impl.DiscountFactory;
-import sale.model.Backet;
+import sale.model.Basket;
 import sale.model.Product;
 import sale.model.TotalDiscount;
 import sale.service.IDiscountService;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DiscountService implements IDiscountService {
 
-    private HashMap<UUID, Backet> backets;
+    private HashMap<UUID, Basket> backets;
     private final IDiscountFactory saleFactory;
 
     public DiscountService() {
@@ -28,43 +28,43 @@ public class DiscountService implements IDiscountService {
     }
 
     @Override
-    public Backet calculateCast(ProductType... types) {
+    public Basket calculateCast(ProductType... types) {
         return createBacket(Arrays.asList(types));
     }
 
     @Override
-    public Backet createBacket(List<ProductType> productTypes) {
+    public Basket createBacket(List<ProductType> productTypes) {
         List<Product> products = getProductsList(productTypes);
-        Backet backet = new Backet(products);
-        backets.put(backet.getId(), backet);
-        backet.setRefreshCalcCallback(this::refreshCast);
-        return calculateBacketCost(backet);
+        Basket basket = new Basket(products);
+        backets.put(basket.getId(), basket);
+        basket.setRefreshCalcCallback(this::refreshCast);
+        return calculateBacketCost(basket);
     }
 
     @Override
-    public Backet getBacketById(UUID id) {
+    public Basket getBacketById(UUID id) {
         return backets.get(id);
     }
 
-    private Backet refreshCast(Backet backet) {
-        List<TotalDiscount> totalDiscounts = backet.getTotalDiscounts();
+    private Basket refreshCast(Basket basket) {
+        List<TotalDiscount> totalDiscounts = basket.getTotalDiscounts();
         int discount = 0;
         for (TotalDiscount totalDiscount: totalDiscounts) {
             log.info("Total discount with name \'{}\' and cost {}", totalDiscount.getName(), totalDiscount.getTotalSum());
             discount += totalDiscount.getTotalSum();
         }
-        backet.setDiscount(DiscountCalculateUtils.calculateDiscount(backet.getProducts()));
-        backet.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(backet));
-        backet.setDiscount(backet.getDiscount() + discount);
-        backet.setTotalPrice(backet.getTotalPrice() - discount);
-        return backet;
+        basket.setDiscount(DiscountCalculateUtils.calculateDiscount(basket.getProducts()));
+        basket.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(basket));
+        basket.setDiscount(basket.getDiscount() + discount);
+        basket.setTotalPrice(basket.getTotalPrice() - discount);
+        return basket;
     }
 
-    private Backet calculateBacketCost(Backet backet) {
-        backet.setDiscount(DiscountCalculateUtils.calculateDiscount(backet.getProducts()));
-        backet.setPriceWithoutDiscount(DiscountCalculateUtils.calculatePriceWithoutDiscount(backet.getProducts()));
-        backet.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(backet));
-        return backet;
+    private Basket calculateBacketCost(Basket basket) {
+        basket.setDiscount(DiscountCalculateUtils.calculateDiscount(basket.getProducts()));
+        basket.setPriceWithoutDiscount(DiscountCalculateUtils.calculatePriceWithoutDiscount(basket.getProducts()));
+        basket.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(basket));
+        return basket;
     }
 
     private List<Product> getProductsList(List<ProductType> productTypes) {
