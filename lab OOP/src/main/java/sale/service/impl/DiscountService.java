@@ -2,11 +2,8 @@ package sale.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.BasicConfigurator;
-import sale.builder.ProductBuilder;
-import sale.enums.ProductType;
-import sale.factory.IDiscountFactory;
-import sale.factory.impl.DiscountFactory;
 import sale.model.Basket;
+import sale.model.Discount;
 import sale.model.Product;
 import sale.model.TotalDiscount;
 import sale.service.IDiscountService;
@@ -19,22 +16,38 @@ import java.util.stream.Collectors;
 public class DiscountService implements IDiscountService {
 
     private HashMap<UUID, Basket> backets;
-    private final IDiscountFactory saleFactory;
+
+    /**
+     * Additional discounts depending on the quantity of products to the basket
+     */
+    private Map<Long, Long> mapDiscountByProductCount;
+
+
+    private List<Product> allAvailableProducts;
+
+    private List<Discount> discounts;
+
+    /**
+     * List product types not participate in quantity discounts
+     */
+    private List<UUID> notParticipateInDiscount;
 
     public DiscountService() {
-        this.saleFactory = new DiscountFactory();
         backets = new HashMap<>();
         BasicConfigurator.configure();
+        discounts = new ArrayList<>();
+        allAvailableProducts = new ArrayList<>();
+        notParticipateInDiscount = new ArrayList<>();
+        mapDiscountByProductCount = new HashMap<>();
     }
 
     @Override
-    public Basket calculateCast(ProductType... types) {
-        return createBacket(Arrays.asList(types));
+    public Basket calculateCast(Product... products) {
+        return createBacket(Arrays.asList(products));
     }
 
     @Override
-    public Basket createBacket(List<ProductType> productTypes) {
-        List<Product> products = getProductsList(productTypes);
+    public Basket createBacket(List<Product> products) {
         Basket basket = new Basket(products);
         backets.put(basket.getId(), basket);
         basket.setRefreshCalcCallback(this::refreshCast);
@@ -42,8 +55,27 @@ public class DiscountService implements IDiscountService {
     }
 
     @Override
-    public Basket getBacketById(UUID id) {
-        return backets.get(id);
+    public void addDiscountByProductCount(Long productNumber, Long discount) {
+        mapDiscountByProductCount.put(productNumber, discount);
+    }
+
+    @Override
+    public void addDiscount(int priority, int percent, List<Product> productsInvolvde, List<Product> productsApplies) {
+        List<UUID> productsIds = productsInvolvde.stream().map(Product::getId).collect(Collectors.toList());
+        List<UUID> productsAppliesIds = productsApplies.stream().map(Product::getId).collect(Collectors.toList());
+        discounts.add(new Discount(priority, percent, productsIds, productsAppliesIds));
+    }
+
+    @Override
+    public Product createProduct(String name, int price) {
+        Product product = new Product(name, price);
+        allAvailableProducts.add(product);
+        return product;
+    }
+
+    @Override
+    public void addProductInNotParticipateDiscountList(Product product) {
+        notParticipateInDiscount.add(product.getId());
     }
 
     private Basket refreshCast(Basket basket) {
@@ -53,26 +85,19 @@ public class DiscountService implements IDiscountService {
             log.info("Total discount with name \'{}\' and cost {}", totalDiscount.getName(), totalDiscount.getTotalSum());
             discount += totalDiscount.getTotalSum();
         }
-        basket.setDiscount(DiscountCalculateUtils.calculateDiscount(basket.getProducts()));
-        basket.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(basket));
+        basket.setDiscount(DiscountCalculateUtils.calculateDiscount(basket.getProducts(), allAvailableProducts, discounts));
+        basket.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(basket, notParticipateInDiscount,
+                mapDiscountByProductCount));
         basket.setDiscount(basket.getDiscount() + discount);
         basket.setTotalPrice(basket.getTotalPrice() - discount);
         return basket;
     }
 
     private Basket calculateBacketCost(Basket basket) {
-        basket.setDiscount(DiscountCalculateUtils.calculateDiscount(basket.getProducts()));
+        basket.setDiscount(DiscountCalculateUtils.calculateDiscount(basket.getProducts(), allAvailableProducts, discounts));
         basket.setPriceWithoutDiscount(DiscountCalculateUtils.calculatePriceWithoutDiscount(basket.getProducts()));
-        basket.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(basket));
+        basket.setTotalPrice(DiscountCalculateUtils.calculateTotalPrice(basket, notParticipateInDiscount,
+                mapDiscountByProductCount));
         return basket;
-    }
-
-    private List<Product> getProductsList(List<ProductType> productTypes) {
-        return productTypes
-                .stream()
-                .map(productType -> new ProductBuilder(productType, productType.getPrice())
-                    .addSale(saleFactory.get(productType))
-                    .build())
-                .collect(Collectors.toList());
     }
 }

@@ -2,19 +2,24 @@ package sale.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import sale.enums.ProductType;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 public class Discount {
 
     /**
-     * List product types
+     * List involved products in discount
      */
-    private List<ProductType> productTypes;
+    private List<UUID> productsInvolved;
+
+    /**
+     * List applies products in discounts
+     */
+    private List<UUID> productsApplies;
 
     /**
      * Discount priority
@@ -26,8 +31,9 @@ public class Discount {
      */
     private long discountPercent;
 
-    public Discount(long priority, long discountPercent, ProductType... types) {
-        this.productTypes = Arrays.asList(types);
+    public Discount(long priority, long discountPercent, List<UUID> products, List<UUID> productsApplies) {
+        this.productsInvolved = products;
+        this.productsApplies = productsApplies;
         this.priority = priority;
         this.discountPercent = discountPercent;
     }

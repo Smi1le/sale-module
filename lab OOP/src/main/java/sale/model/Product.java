@@ -20,36 +20,27 @@ public class Product {
     /**
      * Product type
      */
-    private ProductType type;
+    private String name;
 
     private long price;
 
-    /**
-     * All available discount for ProductType
-     */
-    private List<Discount> discounts;
+    private boolean isParticipatesInDiscounts = true;
 
     /**
      * Flag is product allready calculate in discount
      */
     private Boolean allreadyInDiscount = false;
 
-    public Product(ProductType type, long price) {
+    public Product(String name, long price) {
         this.id = UUID.randomUUID();
-        this.type = type;
+        this.name = name;
         this.price = price;
-        discounts = new ArrayList<>();
     }
 
     public Product(Product product) {
         this.id = product.id;
-        this.type = product.type;
+        this.name = product.name;
         this.price = product.price;
-        this.discounts = product.discounts;
         this.allreadyInDiscount = product.allreadyInDiscount;
-    }
-
-    public void addSale(Discount sale) {
-        discounts.add(sale);
     }
 }

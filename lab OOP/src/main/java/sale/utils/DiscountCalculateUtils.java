@@ -1,6 +1,5 @@
 package sale.utils;
 
-import sale.enums.ProductType;
 import sale.model.Basket;
 import sale.model.Product;
 import sale.model.Discount;
@@ -10,43 +9,25 @@ import java.util.stream.Collectors;
 
 public class DiscountCalculateUtils {
 
-    /**
-     * Additional discounts depending on the quantity of products to the basket
-     */
-    private static Map<Long, Long> mapDiscountByProductCount;
-
-    /**
-     * List product types not participate in quantity discounts
-     */
-    private static List<ProductType> listProductTypesNotParticipateInQuantityDiscount;
-
-    static {
-        mapDiscountByProductCount = new HashMap<>();
-        mapDiscountByProductCount.put(new Long(3), new Long(5));
-        mapDiscountByProductCount.put(new Long(4), new Long(10));
-        mapDiscountByProductCount.put(new Long(5), new Long(20));
-
-        listProductTypesNotParticipateInQuantityDiscount = new ArrayList<>();
-        listProductTypesNotParticipateInQuantityDiscount.add(ProductType.A);
-        listProductTypesNotParticipateInQuantityDiscount.add(ProductType.C);
-    }
-
     public static long calculatePriceWithoutDiscount(List<Product> productList) {
         return productList.stream().collect(Collectors.summarizingLong(Product::getPrice)).getSum();
     }
 
-    public static double calculateTotalPrice(Basket basket) {
+    public static double calculateTotalPrice(Basket basket, List<UUID> productNotParticipateInDiscount,
+                                             Map<Long, Long> mapDiscountByProductCount) {
         double priceWithoutDiscount = basket.getPriceWithoutDiscount();
         double discount = basket.getDiscount();
         List<Product> products = basket.getProducts();
         double additionalDiscount =  DiscountCalculateUtils
-                .calculateDiscountByProductCount(priceWithoutDiscount - discount, products);
+                .calculateDiscountByProductCount(priceWithoutDiscount - discount,
+                        products, productNotParticipateInDiscount, mapDiscountByProductCount);
         discount += additionalDiscount;
         basket.setDiscount(discount);
         return priceWithoutDiscount - discount;
     }
 
-    public static double calculateDiscount(List<Product> productList) {
+    public static double calculateDiscount(List<Product> productList, List<Product> allAvailableProducts,
+                                           List<Discount> discounts) {
         markIsNotInDiscount(productList);
         double totalDiscount = 0;
 
@@ -55,29 +36,30 @@ public class DiscountCalculateUtils {
                 continue;
             }
 
-            List<Discount> sortedDiscountByPriority = sortByPriority(product);
-            List<ProductType> types = getProductTypesList(productList);
-
+            List<Discount> sortedDiscountByPriority = sortByPriority(product, discounts);
+            List<Product> copyProductList = new ArrayList<>(productList);
             for(int i = 0; i != sortedDiscountByPriority.size();) {
                 Discount discount = sortedDiscountByPriority.get(i);
-                boolean isContains = containsAll(productList, discount.getProductTypes());
+                List<UUID> copyDiscountProductIds = new ArrayList<>(discount.getProductsApplies());
+                boolean isContains = containsAll(copyProductList , copyDiscountProductIds);
                 if (isContains) {
-                    types.removeAll(discount.getProductTypes());
-                    totalDiscount += calculateDiscountForProducts(discount);
+                    totalDiscount += calculateDiscountForProducts(discount, allAvailableProducts);
                     continue;
                 }
                 ++i;
+                copyProductList = new ArrayList<>(productList);
             }
         }
         return totalDiscount;
     }
 
-    public static double calculateDiscountByProductCount(double allPrice, List<Product> products) {
+    public static double calculateDiscountByProductCount(double allPrice, List<Product> products,
+                                                         List<UUID> productsNotParticipateInDiscount,
+                                                         Map<Long, Long> mapDiscountByProductCount) {
             long countProductsInDicsount = products
                     .stream()
-                    .map(Product::getType)
-                    .filter(productType -> !listProductTypesNotParticipateInQuantityDiscount.contains(productType))
-                    .collect(Collectors.summarizingLong(ProductType::getPrice)).getCount();
+                    .filter(product -> !productsNotParticipateInDiscount.contains(product.getId()))
+                    .collect(Collectors.summarizingLong(Product::getPrice)).getCount();
 
             long discount = Optional
                     .ofNullable(mapDiscountByProductCount.get(countProductsInDicsount))
@@ -86,21 +68,23 @@ public class DiscountCalculateUtils {
             return calculateDiscount(allPrice, discount);
     }
 
-    private static boolean containsAll(List<Product> products, List<ProductType> productTypes) {
-        List<ProductType> copyProductTypes = new ArrayList<>(productTypes);
+    private static boolean containsAll(List<Product> products, List<UUID> copyProducts) {
+        if (products.isEmpty() || copyProducts.isEmpty()) {
+            return false;
+        }
         for (Product product: products) {
-            if (copyProductTypes .isEmpty()) {
+            if (copyProducts.isEmpty()) {
                 return true;
             }
             if (product.getAllreadyInDiscount()) {
                 continue;
             }
-            if (copyProductTypes .contains(product.getType())) {
+            if (copyProducts.contains(product.getId())) {
                 product.setAllreadyInDiscount(true);
-                copyProductTypes.remove(product.getType());
+                copyProducts.remove(product.getId());
             }
         }
-        return copyProductTypes.isEmpty();
+        return copyProducts.isEmpty();
     }
 
     private static void markIsNotInDiscount(List<Product> products) {
@@ -109,10 +93,11 @@ public class DiscountCalculateUtils {
         }
     }
 
-    private static double calculateDiscountForProducts(Discount sale) {
-        double price = new Double(sale.getProductTypes()
+    private static double calculateDiscountForProducts(Discount sale, List<Product> allProducts) {
+        double price = new Double(allProducts
                 .stream()
-                .collect(Collectors.summarizingLong(ProductType::getPrice))
+                .filter(product -> sale.getProductsApplies().contains(product.getId()))
+                .collect(Collectors.summarizingLong(Product::getPrice))
                 .getSum());
         return calculateDiscount(price, sale.getDiscountPercent());
     }
@@ -121,18 +106,11 @@ public class DiscountCalculateUtils {
         return (price / 100) *  discount;
     }
 
-    private static List<Discount> sortByPriority(Product product) {
-        return product
-                .getDiscounts()
+    private static List<Discount> sortByPriority(Product product, List<Discount> discounts) {
+        return discounts
                 .stream()
+                .filter(discount -> discount.getProductsInvolved().contains(product.getId()))
                 .sorted(Comparator.comparing(Discount::getPriority))
-                .collect(Collectors.toList());
-    }
-
-    private static List<ProductType> getProductTypesList(List<Product> products) {
-        return products
-                .stream()
-                .map(Product::getType)
                 .collect(Collectors.toList());
     }
 }
