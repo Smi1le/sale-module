@@ -1,8 +1,6 @@
 import model.Distance;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Algorithm {
@@ -15,37 +13,32 @@ public class Algorithm {
      **/
     public static Distance calculate(String text, String word1, String word2) {
         List<String> list = Arrays.asList(text.split(" "));
-        List<Integer> distances = new ArrayList<>();
-        int index = 0;
+        boolean isStartWordWas = false;
+        boolean isEndWordWas = false;
+        int startWordIndex = 0;
+        int endWordIndex = 0;
+        Set<Integer> distances = new HashSet<>();
+        int i = 0;
         for (String value : list) {
             if (value.equals(word1)) {
-                distances.addAll(calculateDistance(list.subList(index, list.size()), index, word2));
-            } else if (value.equals(word2)) {
-                distances.addAll(calculateDistance(list.subList(index, list.size()), index, word1));
+                isStartWordWas = true;
+                startWordIndex = i;
             }
-            index++;
+            else if (value.equals(word2)) {
+                isEndWordWas = true;
+                endWordIndex = i;
+            }
+
+            if (isStartWordWas && value.equals(word2)) {
+                distances.add(i - startWordIndex - 1);
+            }else if (isEndWordWas && value.equals(word1)) {
+                distances.add(i - endWordIndex - 1);
+            }
+            i++;
         }
         List<Integer> sortedResults = distances.stream().sorted().collect(Collectors.toList());
         System.out.println("min distance: " + sortedResults.get(0));
         System.out.println("max distance: " + sortedResults.get(sortedResults.size() - 1));
         return new Distance(sortedResults.get(0), sortedResults.get(sortedResults.size() - 1));
-    }
-
-    /**
-     * Calculates the distance between the first and second word
-     * @param words - list of words coming after the desired
-     * @param keyIndex - index key word
-     * @param searchWord - word for search for calculate distance between him and key
-     **/
-    private static List<Integer> calculateDistance(List<String> words, Integer keyIndex, String searchWord) {
-        int index = keyIndex + 1;
-        List<Integer> distances = new ArrayList<>();
-        for (String word: words) {
-            if (word.equals(searchWord)) {
-                distances.add((index - 1) - (keyIndex + 1));
-            }
-            index++;
-        }
-        return distances;
     }
 }
